@@ -389,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             loadingOverlay.classList.add('active');
 
-            fetch('https://script.google.com/macros/s/AKfycbzU6GqUpi2C1z_-d6ZUavey7_kBYZ0tAHkBBC9-opwKH1ZHO9mXbQStxqH3UCmuB3cFfw/exec', {
+            fetch('https://script.google.com/macros/s/AKfycbyKPUrftCcXStKMuoTn-MVWDH7Jt1HvabDReT83nCzV6XsshEPshcRwIBMqO56nM7zb8g/exec', {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {
@@ -448,3 +448,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initStarryBackground();
 });
+

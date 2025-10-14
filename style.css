@@ -193,7 +193,6 @@ nav {
     align-items: center;
     overflow: hidden;
     box-shadow: 0 0px 50px rgba(0, 166, 255, 0.3);
-    ;
 }
 
 .home-image img {
@@ -453,9 +452,11 @@ nav {
 }
 
 .experience-footer {
-    padding: 0 20px 20px;
-    text-align: center;
-    /* Center the button */
+    padding: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
 }
 
 .view-experience-btn {
@@ -467,7 +468,6 @@ nav {
     font-weight: 600;
     transition: all 0.3s ease;
     display: inline-block;
-    /* Allows text-align center to work */
     font-size: 14px;
     min-width: 120px;
 }
@@ -505,7 +505,6 @@ nav {
     padding: 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     margin-bottom: 10px;
-    /* Added margin */
 }
 
 .project-header h3 {
@@ -517,9 +516,7 @@ nav {
 
 .project-body {
     padding: 0 20px;
-    /* Changed from padding: 20px */
     margin-bottom: 50px;
-    /* Added margin */
     flex: 1;
 }
 
@@ -560,7 +557,6 @@ nav {
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 10px;
-    /* Added margin */
 }
 
 .project-links-row {

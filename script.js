@@ -1,3 +1,31 @@
+// Function for logo click - reload and scroll to top
+function reloadAndScrollToTop() {
+    localStorage.setItem('scrollToTop', 'true');
+    window.location.reload();
+}
+
+// Always scroll to top smoothly on page load (including manual reloads)
+window.onload = function() {
+    // Smooth scroll to top on every page load
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    
+    // Remove the scrollToTop flag if it exists
+    localStorage.removeItem('scrollToTop');
+};
+
+// Handle browser back/forward navigation
+window.onpageshow = function(event) {
+    if (event.persisted) {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+};
+
 // Mobile Menu Toggle
 const menuToggle = document.querySelector('.menu-toggle');
 const navLinks = document.querySelector('.nav-links');
@@ -389,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             loadingOverlay.classList.add('active');
 
-            fetch('https://script.google.com/macros/s/AKfycbyKPUrftCcXStKMuoTn-MVWDH7Jt1HvabDReT83nCzV6XsshEPshcRwIBMqO56nM7zb8g/exec', {
+            fetch('https://script.google.com/macros/s/AKfycbzU6GqUpi2C1z_-d6ZUavey7_kBYZ0tAHkBBC9-opwKH1ZHO9mXbQStxqH3UCmuB3cFfw/exec', {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {
@@ -448,4 +476,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
     initStarryBackground();
 });
-

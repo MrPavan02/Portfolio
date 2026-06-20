@@ -189,10 +189,20 @@ handleNavScroll();
 
 initScrollAnimations();
 
-// Custom cursor follower + neon trail + click ripple
+// Custom cursor follower + neon trail + click ripple (desktop only)
+const customCursorMq = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 993px)');
+let destroyCustomCursor = null;
+
 function initCustomCursor() {
-    const isTouchDevice = 'ontouchstart' in window || window.matchMedia('(pointer: coarse)').matches;
-    if (isTouchDevice || prefersReducedMotion) return;
+    if (destroyCustomCursor) {
+        destroyCustomCursor();
+        destroyCustomCursor = null;
+    }
+
+    if (!customCursorMq.matches || prefersReducedMotion) {
+        document.body.classList.remove('custom-cursor-active');
+        return;
+    }
 
     const dot = document.querySelector('.cursor-dot');
     const ring = document.querySelector('.cursor-ring');
@@ -203,6 +213,7 @@ function initCustomCursor() {
     const TRAIL_COUNT = 10;
     const RING_LERP = 0.28;
     const trail = [];
+    let rafId = null;
 
     for (let i = 0; i < TRAIL_COUNT; i++) {
         const trailDot = document.createElement('div');
@@ -237,7 +248,7 @@ function initCustomCursor() {
         }
     }
 
-    document.addEventListener('mousemove', (e) => {
+    function onMouseMove(e) {
         mouseX = e.clientX;
         mouseY = e.clientY;
         if (!visible) {
@@ -247,25 +258,25 @@ function initCustomCursor() {
         dot.style.left = `${mouseX}px`;
         dot.style.top = `${mouseY}px`;
         ring.classList.toggle('cursor-hover', !!e.target.closest(interactiveSelector));
-    });
+    }
 
-    document.addEventListener('mousedown', () => {
+    function onMouseDown() {
         ring.classList.add('cursor-click');
         spawnCursorRipple(mouseX, mouseY);
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
+    function onMouseUp() {
         ring.classList.remove('cursor-click');
-    });
+    }
 
-    document.addEventListener('mouseleave', () => {
+    function onMouseLeave() {
         setCursorVisible(false);
         visible = false;
-    });
+    }
 
-    document.addEventListener('mouseenter', () => {
+    function onMouseEnter() {
         if (visible) setCursorVisible(true);
-    });
+    }
 
     function animateCursor() {
         ringX += (mouseX - ringX) * RING_LERP;
@@ -285,10 +296,27 @@ function initCustomCursor() {
             prevY = t.y;
         });
 
-        requestAnimationFrame(animateCursor);
+        rafId = requestAnimationFrame(animateCursor);
     }
 
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mouseup', onMouseUp);
+    document.addEventListener('mouseleave', onMouseLeave);
+    document.addEventListener('mouseenter', onMouseEnter);
     animateCursor();
+
+    destroyCustomCursor = () => {
+        if (rafId) cancelAnimationFrame(rafId);
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mousedown', onMouseDown);
+        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener('mouseleave', onMouseLeave);
+        document.removeEventListener('mouseenter', onMouseEnter);
+        trail.forEach((t) => t.el.remove());
+        ring.classList.remove('cursor-hover', 'cursor-click');
+        document.body.classList.remove('custom-cursor-active');
+    };
 }
 
 function spawnCursorRipple(x, y) {
@@ -301,6 +329,7 @@ function spawnCursorRipple(x, y) {
 }
 
 initCustomCursor();
+customCursorMq.addEventListener('change', initCustomCursor);
 
 // Experience modal — read full details
 function initExperienceModal() {
@@ -623,10 +652,9 @@ function highlightAchievement() {
         const achievement = document.getElementById("best-paper-award");
         if (achievement) {
             achievement.classList.add("highlight");
-            // Remove after 2 seconds
             setTimeout(() => {
                 achievement.classList.remove("highlight");
-            }, 1000);
+            }, 1500);
         }
     }, 500);
 }

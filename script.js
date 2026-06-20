@@ -1,3 +1,30 @@
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Cinematic page intro (1.5s on load / reload)
+function initPageIntro() {
+    const intro = document.getElementById('page-intro');
+    if (!intro) return;
+
+    document.body.classList.add('page-loading');
+
+    const cleanup = () => {
+        if (!intro.isConnected) return;
+        intro.remove();
+        document.body.classList.remove('page-loading');
+    };
+
+    if (prefersReducedMotion) {
+        intro.remove();
+        document.body.classList.remove('page-loading');
+        return;
+    }
+
+    intro.addEventListener('animationend', cleanup, { once: true });
+    setTimeout(cleanup, 1700);
+}
+
+initPageIntro();
+
 // Function for logo click - reload and scroll to top
 function reloadAndScrollToTop() {
     localStorage.setItem('scrollToTop', 'true');
@@ -84,20 +111,261 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 // Animation on Scroll
 const observerOptions = {
-    threshold: 0.1
+    threshold: 0.12,
+    rootMargin: '0px 0px -40px 0px'
 };
 
-const observer = new IntersectionObserver((entries) => {
+const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             entry.target.classList.add('animate');
+
+            if (entry.target.classList.contains('cgpa-ring')) {
+                animateCgpaRing(entry.target);
+            }
+
+            revealObserver.unobserve(entry.target);
         }
     });
 }, observerOptions);
 
-document.querySelectorAll('.section, .experience-card, .achievement-card').forEach(section => {
-    observer.observe(section);
-});
+function animateCgpaRing(ringEl) {
+    const cgpa = parseFloat(ringEl.dataset.cgpa);
+    if (Number.isNaN(cgpa)) return;
+
+    const circumference = 2 * Math.PI * 52;
+    const progress = Math.min(cgpa / 10, 1);
+    const offset = circumference * (1 - progress);
+
+    ringEl.style.setProperty('--ring-offset', `${offset}`);
+    ringEl.classList.add('animate');
+}
+
+function initScrollAnimations() {
+    const revealElements = document.querySelectorAll('.reveal, .section-title');
+
+    revealElements.forEach(el => {
+        if (el.closest('#home')) {
+            if (prefersReducedMotion) {
+                el.classList.add('animate');
+            } else {
+                const homeReveals = el.closest('#home').querySelectorAll('.reveal');
+                const index = Array.from(homeReveals).indexOf(el);
+                setTimeout(() => el.classList.add('animate'), Math.max(index, 0) * 60);
+            }
+            return;
+        }
+
+        if (prefersReducedMotion) {
+            el.classList.add('animate');
+            if (el.classList.contains('cgpa-ring')) {
+                animateCgpaRing(el);
+            }
+            return;
+        }
+
+        revealObserver.observe(el);
+    });
+
+    document.querySelectorAll('.cgpa-ring').forEach(ring => {
+        if (prefersReducedMotion) {
+            animateCgpaRing(ring);
+        } else {
+            revealObserver.observe(ring);
+        }
+    });
+}
+
+// Nav shrink on scroll
+const nav = document.querySelector('nav');
+
+function handleNavScroll() {
+    if (!nav) return;
+    nav.classList.toggle('nav-scrolled', window.scrollY > 60);
+}
+
+window.addEventListener('scroll', handleNavScroll, { passive: true });
+handleNavScroll();
+
+initScrollAnimations();
+
+// Custom cursor follower + neon trail + click ripple
+function initCustomCursor() {
+    const isTouchDevice = 'ontouchstart' in window || window.matchMedia('(pointer: coarse)').matches;
+    if (isTouchDevice || prefersReducedMotion) return;
+
+    const dot = document.querySelector('.cursor-dot');
+    const ring = document.querySelector('.cursor-ring');
+    if (!dot || !ring) return;
+
+    document.body.classList.add('custom-cursor-active');
+
+    const TRAIL_COUNT = 10;
+    const RING_LERP = 0.28;
+    const trail = [];
+
+    for (let i = 0; i < TRAIL_COUNT; i++) {
+        const trailDot = document.createElement('div');
+        trailDot.className = 'cursor-trail-dot';
+        trailDot.setAttribute('aria-hidden', 'true');
+        trailDot.style.opacity = String((1 - i / TRAIL_COUNT) * 0.55);
+        trailDot.style.transform = `translate(-50%, -50%) scale(${1 - i * 0.035})`;
+        document.body.appendChild(trailDot);
+        trail.push({ el: trailDot, x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    }
+
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    let ringX = mouseX;
+    let ringY = mouseY;
+    let visible = false;
+
+    const interactiveSelector = 'a, button, input, textarea, select, label, .menu-toggle, .exp-read-more-btn';
+    const cursorEls = [dot, ring, ...trail.map((t) => t.el)];
+
+    function setCursorVisible(show) {
+        if (show) {
+            dot.style.opacity = '';
+            ring.style.opacity = '';
+            trail.forEach((t, i) => {
+                t.el.style.opacity = String((1 - i / TRAIL_COUNT) * 0.55);
+            });
+        } else {
+            cursorEls.forEach((el) => {
+                el.style.opacity = '0';
+            });
+        }
+    }
+
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+        if (!visible) {
+            visible = true;
+            setCursorVisible(true);
+        }
+        dot.style.left = `${mouseX}px`;
+        dot.style.top = `${mouseY}px`;
+        ring.classList.toggle('cursor-hover', !!e.target.closest(interactiveSelector));
+    });
+
+    document.addEventListener('mousedown', () => {
+        ring.classList.add('cursor-click');
+        spawnCursorRipple(mouseX, mouseY);
+    });
+
+    document.addEventListener('mouseup', () => {
+        ring.classList.remove('cursor-click');
+    });
+
+    document.addEventListener('mouseleave', () => {
+        setCursorVisible(false);
+        visible = false;
+    });
+
+    document.addEventListener('mouseenter', () => {
+        if (visible) setCursorVisible(true);
+    });
+
+    function animateCursor() {
+        ringX += (mouseX - ringX) * RING_LERP;
+        ringY += (mouseY - ringY) * RING_LERP;
+        ring.style.left = `${ringX}px`;
+        ring.style.top = `${ringY}px`;
+
+        let prevX = mouseX;
+        let prevY = mouseY;
+        trail.forEach((t, i) => {
+            const speed = 0.42 - i * 0.018;
+            t.x += (prevX - t.x) * speed;
+            t.y += (prevY - t.y) * speed;
+            t.el.style.left = `${t.x}px`;
+            t.el.style.top = `${t.y}px`;
+            prevX = t.x;
+            prevY = t.y;
+        });
+
+        requestAnimationFrame(animateCursor);
+    }
+
+    animateCursor();
+}
+
+function spawnCursorRipple(x, y) {
+    const ripple = document.createElement('span');
+    ripple.className = 'cursor-ripple';
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    document.body.appendChild(ripple);
+    ripple.addEventListener('animationend', () => ripple.remove());
+}
+
+initCustomCursor();
+
+// Experience modal — read full details
+function initExperienceModal() {
+    const modal = document.getElementById('experience-modal');
+    if (!modal) return;
+
+    const backdrop = modal.querySelector('.exp-modal-backdrop');
+    const closeBtn = modal.querySelector('.exp-modal-close');
+    const modalHeader = modal.querySelector('.exp-modal-header');
+    const modalBody = modal.querySelector('.exp-modal-body');
+    const modalFooter = modal.querySelector('.exp-modal-footer');
+    let lastFocusedElement = null;
+
+    function openModal(card) {
+        const header = card.querySelector('.exp-header');
+        const body = card.querySelector('.exp-body');
+        const footer = card.querySelector('.experience-footer');
+
+        modalHeader.innerHTML = header ? header.innerHTML : '';
+        modalBody.innerHTML = body ? body.innerHTML : '';
+        modalFooter.innerHTML = footer ? footer.innerHTML : '';
+
+        const titleEl = modalHeader.querySelector('h3');
+        if (titleEl) titleEl.id = 'exp-modal-title';
+
+        lastFocusedElement = document.activeElement;
+        modal.removeAttribute('hidden');
+        requestAnimationFrame(() => modal.classList.add('active'));
+        document.body.style.overflow = 'hidden';
+        closeBtn.focus();
+    }
+
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+            modal.setAttribute('hidden', '');
+            modalHeader.innerHTML = '';
+            modalBody.innerHTML = '';
+            modalFooter.innerHTML = '';
+        }, 300);
+
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus();
+        }
+    }
+
+    document.querySelectorAll('.exp-read-more-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const card = btn.closest('.experience-card');
+            if (card) openModal(card);
+        });
+    });
+
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+}
+
+initExperienceModal();
 
 // Starry Background Effect
 function initStarryBackground() {

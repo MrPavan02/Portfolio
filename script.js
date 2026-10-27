@@ -1,26 +1,99 @@
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-// Cinematic page intro (1.5s on load / reload)
+// Video page intro — autoplays immediately with sound when browser allows
 function initPageIntro() {
     const intro = document.getElementById('page-intro');
+    const video = document.getElementById('intro-video');
     if (!intro) return;
 
     document.body.classList.add('page-loading');
 
-    const cleanup = () => {
-        if (!intro.isConnected) return;
-        intro.remove();
-        document.body.classList.remove('page-loading');
+    let finished = false;
+    let started = false;
+
+    const finishIntro = () => {
+        if (finished) return;
+        finished = true;
+
+        intro.classList.add('page-intro-hide');
+        intro.setAttribute('aria-hidden', 'true');
+
+        const cleanup = () => {
+            if (!intro.isConnected) return;
+            if (video) {
+                try { video.pause(); } catch (_) { /* ignore */ }
+            }
+            intro.remove();
+            document.body.classList.remove('page-loading');
+        };
+
+        intro.addEventListener('transitionend', cleanup, { once: true });
+        setTimeout(cleanup, 500);
     };
 
     if (prefersReducedMotion) {
-        intro.remove();
-        document.body.classList.remove('page-loading');
+        finishIntro();
         return;
     }
 
-    intro.addEventListener('animationend', cleanup, { once: true });
-    setTimeout(cleanup, 1700);
+    if (!video) {
+        finishIntro();
+        return;
+    }
+
+    // ~2s intro + buffer
+    const safetyTimer = setTimeout(finishIntro, 4000);
+
+    const playIntro = () => {
+        if (finished || started) return;
+        started = true;
+
+        video.classList.add('is-ready');
+        video.muted = false;
+        video.defaultMuted = false;
+        video.volume = 1;
+
+        const playPromise = video.play();
+        if (!playPromise || typeof playPromise.then !== 'function') return;
+
+        playPromise.catch(() => {
+            // Browser blocked autoplay-with-sound. Retry muted so animation still shows.
+            // (Chrome/Safari/mobile require a prior user gesture for audible autoplay.)
+            video.muted = true;
+            const mutedPlay = video.play();
+            if (mutedPlay && typeof mutedPlay.catch === 'function') {
+                mutedPlay.catch(() => {
+                    clearTimeout(safetyTimer);
+                    finishIntro();
+                });
+            }
+        });
+    };
+
+    const tryStart = () => {
+        if (finished || started) return;
+        if (video.readyState >= 2) playIntro();
+    };
+
+    video.addEventListener('ended', () => {
+        clearTimeout(safetyTimer);
+        finishIntro();
+    }, { once: true });
+
+    video.addEventListener('error', () => {
+        clearTimeout(safetyTimer);
+        finishIntro();
+    }, { once: true });
+
+    video.addEventListener('loadeddata', tryStart);
+    video.addEventListener('canplay', tryStart);
+    video.addEventListener('canplaythrough', tryStart);
+
+    if (video.readyState === 0) {
+        try { video.load(); } catch (_) { /* ignore */ }
+    }
+
+    tryStart();
 }
 
 initPageIntro();

@@ -8,17 +8,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./style.css">
     <link rel="icon" href="./images/P logo.png" type="image/x-icon">
+    <link rel="preload" as="video" href="./images/Intro_logo_animation.mp4" type="video/mp4">
 </head>
 
 <body>
-    <div id="page-intro" class="page-intro" aria-hidden="false">
-        <div class="intro-vignette" aria-hidden="true"></div>
-        <div class="intro-letterbox intro-letterbox-top" aria-hidden="true"></div>
-        <div class="intro-letterbox intro-letterbox-bottom" aria-hidden="true"></div>
+    <div id="page-intro" class="page-intro" aria-hidden="false" role="presentation">
         <div class="intro-stage">
-            <div class="intro-glow" aria-hidden="true"></div>
-            <div class="intro-light-sweep" aria-hidden="true"></div>
-            <img src="./images/P logo.png" alt="" class="intro-logo">
+            <video
+                id="intro-video"
+                class="intro-video"
+                autoplay
+                playsinline
+                webkit-playsinline
+                preload="auto"
+                poster="./images/P logo.png"
+                aria-hidden="true"
+            >
+                <source src="./images/Intro_logo_animation.mp4" type="video/mp4">
+            </video>
         </div>
     </div>
     <div id="star-container"></div>

@@ -67,9 +67,23 @@
         </div>
         <div class="home-image reveal reveal-scale">
             <div class="home-image-glow"></div>
-            <img src="./images/pavan_img.png" alt="Pavan Vinjamuri">
+            <button type="button" class="home-image-trigger" id="hero-image-trigger" aria-label="View color portrait">
+                <img src="./images/Hero_BW_image.png" alt="Pavan Vinjamuri" class="home-img home-img-bw">
+                <img src="./images/Hero_Colored_image.png" alt="" class="home-img home-img-color" aria-hidden="true">
+            </button>
         </div>
     </section>
+
+    <!-- Hero image lightbox (color portrait) -->
+    <div id="hero-lightbox" class="hero-lightbox" hidden aria-hidden="true">
+        <div class="hero-lightbox-backdrop" data-hero-close></div>
+        <div class="hero-lightbox-panel" role="dialog" aria-modal="true" aria-label="Color portrait">
+            <button type="button" class="hero-lightbox-close" data-hero-close aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+            <img src="./images/Hero_Colored_image.png" alt="Pavan Vinjamuri — color portrait" class="hero-lightbox-img">
+        </div>
+    </div>
 
     <!-- About Section -->
     <section id="about" class="section">

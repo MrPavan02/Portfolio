@@ -404,6 +404,51 @@ function spawnCursorRipple(x, y) {
 initCustomCursor();
 customCursorMq.addEventListener('change', initCustomCursor);
 
+// Home hero image — click opens color portrait lightbox
+function initHeroLightbox() {
+    const trigger = document.getElementById('hero-image-trigger');
+    const lightbox = document.getElementById('hero-lightbox');
+    if (!trigger || !lightbox) return;
+
+    const openLightbox = () => {
+        lightbox.hidden = false;
+        lightbox.setAttribute('aria-hidden', 'false');
+        // Allow paint before transition
+        requestAnimationFrame(() => {
+            lightbox.classList.add('is-open');
+        });
+        document.body.classList.add('hero-lightbox-open');
+    };
+
+    const closeLightbox = () => {
+        lightbox.classList.remove('is-open');
+        lightbox.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('hero-lightbox-open');
+
+        const finish = () => {
+            if (!lightbox.classList.contains('is-open')) {
+                lightbox.hidden = true;
+            }
+        };
+        lightbox.addEventListener('transitionend', finish, { once: true });
+        setTimeout(finish, 350);
+    };
+
+    trigger.addEventListener('click', openLightbox);
+
+    lightbox.querySelectorAll('[data-hero-close]').forEach((el) => {
+        el.addEventListener('click', closeLightbox);
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && lightbox.classList.contains('is-open')) {
+            closeLightbox();
+        }
+    });
+}
+
+initHeroLightbox();
+
 // Experience modal — read full details
 function initExperienceModal() {
     const modal = document.getElementById('experience-modal');
@@ -517,7 +562,21 @@ function initStarryBackground() {
     }
 
     // Start shooting star loop with random intervals
+    let shootingTimer = null;
     scheduleShootingStar();
+
+    // Avoid timer buildup while tab is in background
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            if (shootingTimer) {
+                clearTimeout(shootingTimer);
+                shootingTimer = null;
+            }
+            starContainer.querySelectorAll('.shooting-star').forEach((el) => el.remove());
+        } else {
+            scheduleShootingStar();
+        }
+    });
 
     function addShapeStyles() {
         const style = document.createElement('style');
@@ -610,15 +669,26 @@ function initStarryBackground() {
     }
 
     function scheduleShootingStar() {
+        if (shootingTimer) {
+            clearTimeout(shootingTimer);
+            shootingTimer = null;
+        }
+        if (document.hidden) return;
+
         // Random interval between shooting stars
         const interval = config.shootingStarInterval + Math.random() * config.shootingStarVariance;
-        setTimeout(() => {
-            createShootingStar();
-            scheduleShootingStar(); // Schedule the next one
+        shootingTimer = setTimeout(() => {
+            shootingTimer = null;
+            if (!document.hidden) {
+                createShootingStar();
+                scheduleShootingStar(); // Schedule the next one
+            }
         }, interval);
     }
 
     function createShootingStar() {
+        if (document.hidden) return;
+
         const shootingStar = document.createElement('div');
         shootingStar.className = 'shooting-star';
         
@@ -669,6 +739,8 @@ function initStarryBackground() {
         let y = startY;
         
         function animate() {
+            if (document.hidden || !shootingStar.isConnected) return;
+
             // Move along the angle
             x += speed * Math.cos(angle * Math.PI / 180);
             y += speed * Math.sin(angle * Math.PI / 180);
@@ -683,8 +755,8 @@ function initStarryBackground() {
                 x > -20 && x < 120 && 
                 y > -20 && y < 120) {
                 requestAnimationFrame(animate);
-            } else {
-                starContainer.removeChild(shootingStar);
+            } else if (shootingStar.isConnected) {
+                shootingStar.remove();
             }
         }
         

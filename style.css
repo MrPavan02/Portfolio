@@ -494,19 +494,47 @@ nav.nav-scrolled {
     width: 90%;
     height: 90%;
     padding: 0;
-    border: 2px solid #1d1d1d;
+    border: 2px solid rgba(29, 29, 29, 0.95);
     border-radius: 50%;
     overflow: hidden;
-    background: transparent;
+    background: #0a0a0a;
     cursor: pointer;
-    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    isolation: isolate;
+    transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+        box-shadow 0.55s ease,
+        border-color 0.55s ease;
+}
+
+.home-image-trigger::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    z-index: 3;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 0 rgba(15, 150, 222, 0);
+    transition: box-shadow 0.55s ease;
 }
 
 .home-image-trigger:hover,
 .home-image-trigger:focus-visible {
-    transform: scale(1.05);
-    box-shadow: 0 0 28px rgba(15, 150, 222, 0.35);
+    transform: scale(1.04);
+    border-color: rgba(15, 150, 222, 0.65);
+    box-shadow:
+        0 0 0 1px rgba(15, 150, 222, 0.25),
+        0 0 36px rgba(15, 150, 222, 0.4);
     outline: none;
+}
+
+.home-image-trigger:hover::after,
+.home-image-trigger:focus-visible::after {
+    box-shadow: inset 0 0 0 2px rgba(94, 196, 255, 0.35);
+}
+
+.home-image:has(.home-image-trigger:hover) .home-image-glow,
+.home-image:has(.home-image-trigger:focus-visible) .home-image-glow {
+    background: radial-gradient(circle, rgba(15, 150, 222, 0.55) 0%, transparent 70%);
+    animation-duration: 2.4s;
 }
 
 .home-img {
@@ -517,22 +545,42 @@ nav.nav-scrolled {
     object-fit: cover;
     border-radius: 50%;
     pointer-events: none;
+    will-change: clip-path, transform, filter, opacity;
 }
 
 .home-img-bw {
     z-index: 1;
     opacity: 1;
+    transform: scale(1);
+    filter: contrast(1.02) brightness(0.98);
+    transition: transform 0.75s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.75s ease,
+        opacity 0.75s ease;
 }
 
 .home-img-color {
     z-index: 2;
-    opacity: 0;
-    transition: opacity 0.65s ease;
+    opacity: 1;
+    /* Circular iris reveal — color blooms from center */
+    clip-path: circle(0% at 50% 50%);
+    transform: scale(1.06);
+    filter: saturate(1.05) brightness(1.03);
+    transition: clip-path 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 0.8s ease;
+}
+
+.home-image-trigger:hover .home-img-bw,
+.home-image-trigger:focus-visible .home-img-bw {
+    transform: scale(1.03);
+    filter: contrast(0.95) brightness(0.72);
+    opacity: 0.85;
 }
 
 .home-image-trigger:hover .home-img-color,
 .home-image-trigger:focus-visible .home-img-color {
-    opacity: 1;
+    clip-path: circle(78% at 50% 50%);
+    transform: scale(1);
 }
 
 /* Hero color portrait lightbox */
@@ -617,18 +665,35 @@ nav.nav-scrolled {
 
 @media (hover: none) {
     .home-img-color {
-        opacity: 0;
+        clip-path: circle(0% at 50% 50%);
+        transform: scale(1.06);
+    }
+
+    .home-image-trigger:hover .home-img-color,
+    .home-image-trigger:focus-visible .home-img-color {
+        clip-path: circle(0% at 50% 50%);
+    }
+
+    .home-image-trigger:hover .home-img-bw,
+    .home-image-trigger:focus-visible .home-img-bw {
+        transform: scale(1);
+        filter: contrast(1.02) brightness(0.98);
+        opacity: 1;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .home-img-color {
+    .home-img-bw,
+    .home-img-color,
+    .home-image-trigger,
+    .home-image-trigger::after {
         transition: none;
     }
 
     .home-image-trigger:hover .home-img-color,
     .home-image-trigger:focus-visible .home-img-color {
-        opacity: 1;
+        clip-path: circle(78% at 50% 50%);
+        transform: scale(1);
     }
 
     .hero-lightbox,
